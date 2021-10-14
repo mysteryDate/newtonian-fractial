@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<style type='text/css'>
+  canvas {
+    border: 1px solid magenta;
+  }
+</style>
+<body></body>
+<script type='text/javascript'>
+
+// a polynomial of form (where 'c' = this.coefficients)
+// c[0] + c[1]x + c[2]x^2 + c[3]x^3... etc
+class Polynomial {
+  constructor(coefficients) {
+    this.coefficients = coefficients;
+  }
+
+  valueAt(x) {
+    let result = 0;
+    for (let i = 0; i < this.coefficients.length; i++) {
+      const c = this.coefficients[i];
+      result += c * (x ** i);
+    }
+    return result;
+  }
+
+  derivative() {
+    const coefficients = [];
+    for (let i = 1; i < this.coefficients.length; i++) {
+      const c = this.coefficients[i];
+      coefficients.push(c * i);
+    }
+    return new Polynomial(coefficients);
+  }
+}
+
+class ComplexNumber {
+  constructor(real, imaginary) {
+    this.real = real;
+    this.imaginary = imaginary;
+  }
+}
+
+function newtonStep(polynomial, guess) {
+  const px = polynomial.valueAt(guess);
+  const pprimex = polynomial.derivative().valueAt(guess);
+  return guess - (px/pprimex);
+}
+
+// returns a zero and the number of steps it took to get there
+function findZero(polynomial, guess, tolerance) {
+  let value = polynomial.valueAt(guess);
+  let num_steps = 0;
+  while (value > tolerance || value < -1*tolerance) {
+    const new_guess = newtonStep(polynomial, guess);
+    guess = new_guess;
+    num_steps += 1;
+    value = polynomial.valueAt(guess);
+  }
+
+  return [guess, num_steps];
+}
+
+const canvas = document.createElement('canvas');
+document.body.appendChild(canvas);
+const ctx = canvas.getContext('2d');
+
+ctx.fillRect(10, 10, 100, 100);
+
+const p = new Polynomial([-10, 0, 4, 1]);
+console.log(p.valueAt(1.36));
+console.log(findZero(p, 1, 0.001));
+// console.log(p.derivative().coefficients);
+
+</script>
+</html>
