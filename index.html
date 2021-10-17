@@ -41,37 +41,62 @@ class ComplexNumber {
   }
 
   multiply(A) {
+    const result = this.copy();
     if (A instanceof ComplexNumber) {
-      const r = this.real;
-      const im = this.imaginary;
-      this.real = A.real * r - A.imaginary * im;
-      this.imaginary = A.real * im + A.imaginary * r;
+      result.real = A.real * this.real - A.imaginary * this.imaginary;
+      result.imaginary = A.real * this.imaginary + A.imaginary * this.real;
     } else if (typeof(A) === "number") {
-      this.real *= A;
-      this.imaginary *= A;
+      result.real *= A;
+      result.imaginary *= A;
     } else {
       throw new Error("Must multiply with either a number or a complex number");
     }
-    return this;
+    return result;
+  }
+
+  divide(A) {
+    const result = this.copy();
+    if (typeof(A) === "number") {
+      result.real /= A;
+      result.imaginary /= A;
+    } else if (A instanceof ComplexNumber) {
+      const a = this.real;
+      const b = this.imaginary;
+      const c = A.real;
+      const d = A.imaginary;
+      result.real = (a*c + b*d) / (c**2 + d**2);
+      result.imaginary = (b*c + a*d) /(c**2 + d**2);
+    } else {
+      throw new Error("Must divide with either a number or a complex number");
+    }
+    return result;
   }
 
   add(A) {
+    const result = this.copy();
     if (A instanceof ComplexNumber) {
-      this.real += A.real;
-      this.imaginary += A.imaginary;
+      result.real += A.real;
+      result.imaginary += A.imaginary;
     } else if (typeof(A) === "number") {
-      this.real += A;
+      result.real += A;
     } else {
       throw new Error("Must add with either a number or a complex number")
     }
-    return this;
+    return result;
   }
 
   power(n) {
-    const init = this.copy();
+    if (n === 0)
+      return new ComplexNumber(1, 0);
+    let result = this.copy();
     for (let i = 0; i < n - 1; i++) {
-      this.multiply(init);
+      result = result.multiply(this);
     }
+    return result;
+  }
+
+  lengthSq() {
+    return this.real ** 2 + this.imaginary ** 2;
   }
 
   copy() {
@@ -107,11 +132,8 @@ class ComplexPolynomial {
       expand();
     let result = new ComplexNumber(0, 0);
     for (let i = 0; i < this.coefficients.length; i++) {
-      const c = this.coefficients[i].copy();
-      const x1 = c.copy();
-      x1.power(i);
-      c.multiply(x1);
-      result.add(c);
+      const component = this.coefficients[i].multiply(x.power(i));
+      result = result.add(component);
     }
     return result;
   }
@@ -123,11 +145,8 @@ class ComplexPolynomial {
       this.getDerivative();
     let result = new ComplexNumber(0, 0);
     for (let i = 0; i < this.derivative.length; i++) {
-      const c = this.derivative[i].copy();
-      const x1 = x.copy();
-      x1.power(i);
-      c.multiply(x1);
-      result.add(c);
+      const component = this.derivative[i].multiply(x.power(i));
+      result = result.add(component);
     }
     return result;
   }
@@ -157,13 +176,10 @@ class ComplexPolynomial {
     const b = this.roots[1]
     const c = this.roots[2]
 
-    this.coefficients[0] = multiplyComplex([a, b, c]).multiply(-1);
-    this.coefficients[1] = addComplex([
-      multiplyComplex([a, b]),
-      multiplyComplex([a, c]),
-      multiplyComplex([b, c])
-    ]);
-    this.coefficients[2] = addComplex([a, b, c]).multiply(-1);
+    // this.coefficients[0] = multiplyComplex([a, b, c]).multiply(-1);
+    this.coefficients[0] = a.multiply(b).multiply(c).multiply(-1);
+    this.coefficients[1] = a.multiply(b).add(a.multiply(c)).add(b.multiply(c));
+    this.coefficients[2] = a.add(b).add(c).multiply(-1);
     this.coefficients[3] = new ComplexNumber(1, 0);
   }
 }
@@ -190,11 +206,21 @@ function findZero(polynomial, guess, tolerance) {
 
 function complexNewtonStep(polynomial, guess) {
   const px = polynomial.valueAt(guess);
-  const pprimex = polynomial.derivative().valueAt(guess);
+  const pprimex = polynomial.derivativeAt(guess);
+  return guess.add(px.divide(pprimex).multiply(-1));
 }
 
 function complexFindZero(polynomial, guess, tolerance) {
-  // body...
+  let value = polynomial.valueAt(guess);
+  let num_steps = 0;
+  while (value.lengthSq() > tolerance) {
+    const new_guess = complexNewtonStep(polynomial, guess);
+    guess = new_guess;
+    num_steps += 1;
+    value = polynomial.valueAt(guess);
+  }
+
+  return [guess, num_steps];
 }
 
 const func = new ComplexPolynomial([
@@ -204,6 +230,10 @@ const func = new ComplexPolynomial([
 ]);
 func.expand();
 func.derivativeAt(new ComplexNumber(2, 0));
+const zero = complexFindZero(func, new ComplexNumber(5, 3), 0.001);
+console.log(zero[0], zero[1]);
+
+
 
 
 // const p = new Polynomial([-10, 0, 4, 1]);
