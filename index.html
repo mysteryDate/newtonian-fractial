@@ -39,6 +39,133 @@ class ComplexNumber {
     this.real = real;
     this.imaginary = imaginary;
   }
+
+  multiply(A) {
+    if (A instanceof ComplexNumber) {
+      const r = this.real;
+      const im = this.imaginary;
+      this.real = A.real * r - A.imaginary * im;
+      this.imaginary = A.real * im + A.imaginary * r;
+    } else if (typeof(A) === "number") {
+      this.real *= A;
+      this.imaginary *= A;
+    } else {
+      throw new Error("Must multiply with either a number or a complex number");
+    }
+    return this;
+  }
+
+  add(A) {
+    if (A instanceof ComplexNumber) {
+      this.real += A.real;
+      this.imaginary += A.imaginary;
+    } else if (typeof(A) === "number") {
+      this.real += A;
+    } else {
+      throw new Error("Must add with either a number or a complex number")
+    }
+    return this;
+  }
+
+  power(n) {
+    const init = this.copy();
+    for (let i = 0; i < n - 1; i++) {
+      this.multiply(init);
+    }
+  }
+
+  copy() {
+    return new ComplexNumber(this.real, this.imaginary);
+  }
+}
+
+function multiplyComplex(numbers) {
+  const result = numbers[0].copy();
+  for (var i = 1; i < numbers.length; i++)
+    result.multiply(numbers[i]);
+  return result;
+}
+
+function addComplex(numbers) {
+  const result = numbers[0].copy();
+  for (var i = 1; i < numbers.length; i++)
+    result.add(numbers[i]);
+  return result;
+}
+
+class ComplexPolynomial {
+  constructor(roots) {
+    this.roots = roots;
+    this.coefficients = null;
+    this.derivative = null;
+  }
+
+  valueAt(x) {
+    if (!(x instanceof ComplexNumber))
+      x = new ComplexNumber(x, 0);
+    if (!this.coefficients)
+      expand();
+    let result = new ComplexNumber(0, 0);
+    for (let i = 0; i < this.coefficients.length; i++) {
+      const c = this.coefficients[i].copy();
+      const x1 = c.copy();
+      x1.power(i);
+      c.multiply(x1);
+      result.add(c);
+    }
+    return result;
+  }
+
+  derivativeAt(x) {
+    if (!(x instanceof ComplexNumber))
+      x = new ComplexNumber(x, 0);
+    if (!this.derivative)
+      this.getDerivative();
+    let result = new ComplexNumber(0, 0);
+    for (let i = 0; i < this.derivative.length; i++) {
+      const c = this.derivative[i].copy();
+      const x1 = x.copy();
+      x1.power(i);
+      c.multiply(x1);
+      result.add(c);
+    }
+    return result;
+  }
+
+  getDerivative() {
+    if (this.derivative)
+      return;
+
+    if (!this.coefficients)
+      this.expand();
+
+    this.derivative = [];
+    this.derivative[0] = this.coefficients[1];
+    this.derivative[1] = this.coefficients[2].multiply(2);
+    this.derivative[2] = this.coefficients[3].multiply(3);
+  }
+
+  // Just go with order of 3 for now
+  expand() {
+    if (this.roots.length > 3)
+      throw new Error("Can only expand polynomials of degree 3 or less")
+
+    this.coefficients = [];
+
+    // for shorthand
+    const a = this.roots[0]
+    const b = this.roots[1]
+    const c = this.roots[2]
+
+    this.coefficients[0] = multiplyComplex([a, b, c]).multiply(-1);
+    this.coefficients[1] = addComplex([
+      multiplyComplex([a, b]),
+      multiplyComplex([a, c]),
+      multiplyComplex([b, c])
+    ]);
+    this.coefficients[2] = addComplex([a, b, c]).multiply(-1);
+    this.coefficients[3] = new ComplexNumber(1, 0);
+  }
 }
 
 function newtonStep(polynomial, guess) {
@@ -61,16 +188,33 @@ function findZero(polynomial, guess, tolerance) {
   return [guess, num_steps];
 }
 
-const canvas = document.createElement('canvas');
-document.body.appendChild(canvas);
-const ctx = canvas.getContext('2d');
+function complexNewtonStep(polynomial, guess) {
+  const px = polynomial.valueAt(guess);
+  const pprimex = polynomial.derivative().valueAt(guess);
+}
 
-ctx.fillRect(10, 10, 100, 100);
+function complexFindZero(polynomial, guess, tolerance) {
+  // body...
+}
 
-const p = new Polynomial([-10, 0, 4, 1]);
-console.log(p.valueAt(1.36));
-console.log(findZero(p, 1, 0.001));
+const func = new ComplexPolynomial([
+  new ComplexNumber(0, 0),
+  new ComplexNumber(1, 0),
+  new ComplexNumber(2, 0)
+]);
+func.expand();
+func.derivativeAt(new ComplexNumber(2, 0));
+
+
+// const p = new Polynomial([-10, 0, 4, 1]);
+// const c = new ComplexNumber(1, 2);
+// c.power(3);
+// console.log(c);
+// const cp = new ComplexPolynomial([-10, 0, 4, 1, 4, 5, 6]);
+// console.log(p.valueAt(1.36));
+// console.log(findZero(p, 1, 0.001));
 // console.log(p.derivative().coefficients);
+// console.log(multiplyComplex(new ComplexNumber(1, 4), new ComplexNumber(5, 1)));
 
 </script>
 </html>
