@@ -5,204 +5,10 @@
     border: 1px solid magenta;
   }
 </style>
+<script type="text/javascript" src="ComplexNumber.js"></script>
+<script type="text/javascript" src="ComplexPolynomial.js"></script>
 <body></body>
 <script type='text/javascript'>
-
-// a polynomial of form (where 'c' = this.coefficients)
-// c[0] + c[1]x + c[2]x^2 + c[3]x^3... etc
-class Polynomial {
-  constructor(coefficients) {
-    this.coefficients = coefficients;
-  }
-
-  valueAt(x) {
-    let result = 0;
-    for (let i = 0; i < this.coefficients.length; i++) {
-      const c = this.coefficients[i];
-      result += c * (x ** i);
-    }
-    return result;
-  }
-
-  derivative() {
-    const coefficients = [];
-    for (let i = 1; i < this.coefficients.length; i++) {
-      const c = this.coefficients[i];
-      coefficients.push(c * i);
-    }
-    return new Polynomial(coefficients);
-  }
-}
-
-class ComplexNumber {
-  constructor(real, imaginary) {
-    this.real = real;
-    this.imaginary = imaginary;
-  }
-
-  multiply(A) {
-    const result = this.copy();
-    if (A instanceof ComplexNumber) {
-      result.real = A.real * this.real - A.imaginary * this.imaginary;
-      result.imaginary = A.real * this.imaginary + A.imaginary * this.real;
-    } else if (typeof(A) === "number") {
-      result.real *= A;
-      result.imaginary *= A;
-    } else {
-      throw new Error("Must multiply with either a number or a complex number");
-    }
-    return result;
-  }
-
-  divide(A) {
-    const result = this.copy();
-    if (typeof(A) === "number") {
-      result.real /= A;
-      result.imaginary /= A;
-    } else if (A instanceof ComplexNumber) {
-      const a = this.real;
-      const b = this.imaginary;
-      const c = A.real;
-      const d = A.imaginary;
-      result.real = (a*c + b*d) / (c**2 + d**2);
-      result.imaginary = (b*c + a*d) /(c**2 + d**2);
-    } else {
-      throw new Error("Must divide with either a number or a complex number");
-    }
-    return result;
-  }
-
-  add(A) {
-    const result = this.copy();
-    if (A instanceof ComplexNumber) {
-      result.real += A.real;
-      result.imaginary += A.imaginary;
-    } else if (typeof(A) === "number") {
-      result.real += A;
-    } else {
-      throw new Error("Must add with either a number or a complex number")
-    }
-    return result;
-  }
-
-  power(n) {
-    if (n === 0)
-      return new ComplexNumber(1, 0);
-    let result = this.copy();
-    for (let i = 0; i < n - 1; i++) {
-      result = result.multiply(this);
-    }
-    return result;
-  }
-
-  lengthSq() {
-    return this.real ** 2 + this.imaginary ** 2;
-  }
-
-  copy() {
-    return new ComplexNumber(this.real, this.imaginary);
-  }
-}
-
-function multiplyComplex(numbers) {
-  const result = numbers[0].copy();
-  for (var i = 1; i < numbers.length; i++)
-    result.multiply(numbers[i]);
-  return result;
-}
-
-function addComplex(numbers) {
-  const result = numbers[0].copy();
-  for (var i = 1; i < numbers.length; i++)
-    result.add(numbers[i]);
-  return result;
-}
-
-class ComplexPolynomial {
-  constructor(roots) {
-    this.roots = roots;
-    this.coefficients = null;
-    this.derivative = null;
-  }
-
-  valueAt(x) {
-    if (!(x instanceof ComplexNumber))
-      x = new ComplexNumber(x, 0);
-    if (!this.coefficients)
-      expand();
-    let result = new ComplexNumber(0, 0);
-    for (let i = 0; i < this.coefficients.length; i++) {
-      const component = this.coefficients[i].multiply(x.power(i));
-      result = result.add(component);
-    }
-    return result;
-  }
-
-  derivativeAt(x) {
-    if (!(x instanceof ComplexNumber))
-      x = new ComplexNumber(x, 0);
-    if (!this.derivative)
-      this.getDerivative();
-    let result = new ComplexNumber(0, 0);
-    for (let i = 0; i < this.derivative.length; i++) {
-      const component = this.derivative[i].multiply(x.power(i));
-      result = result.add(component);
-    }
-    return result;
-  }
-
-  getDerivative() {
-    if (this.derivative)
-      return;
-
-    if (!this.coefficients)
-      this.expand();
-
-    this.derivative = [];
-    this.derivative[0] = this.coefficients[1];
-    this.derivative[1] = this.coefficients[2].multiply(2);
-    this.derivative[2] = this.coefficients[3].multiply(3);
-  }
-
-  // Just go with order of 3 for now
-  expand() {
-    if (this.roots.length > 3)
-      throw new Error("Can only expand polynomials of degree 3 or less")
-
-    this.coefficients = [];
-
-    // for shorthand
-    const a = this.roots[0] ? this.roots[0] : new ComplexNumber(0, 0);
-    const b = this.roots[1] ? this.roots[1] : new ComplexNumber(0, 0);
-    const c = this.roots[2] ? this.roots[2] : new ComplexNumber(0, 0);
-
-    // this.coefficients[0] = multiplyComplex([a, b, c]).multiply(-1);
-    this.coefficients[0] = a.multiply(b).multiply(c).multiply(-1);
-    this.coefficients[1] = a.multiply(b).add(a.multiply(c)).add(b.multiply(c));
-    this.coefficients[2] = a.add(b).add(c).multiply(-1);
-    this.coefficients[3] = new ComplexNumber(1, 0);
-  }
-}
-
-function newtonStep(polynomial, guess) {
-  const px = polynomial.valueAt(guess);
-  const pprimex = polynomial.derivative().valueAt(guess);
-  return guess - (px/pprimex);
-}
-
-// returns a zero and the number of steps it took to get there
-function findZero(polynomial, guess, tolerance) {
-  let value = polynomial.valueAt(guess);
-  let num_steps = 0;
-  while (value > tolerance || value < -1*tolerance) {
-    const new_guess = newtonStep(polynomial, guess);
-    guess = new_guess;
-    num_steps += 1;
-    value = polynomial.valueAt(guess);
-  }
-
-  return [guess, num_steps];
-}
 
 function complexNewtonStep(polynomial, guess) {
   const px = polynomial.valueAt(guess);
@@ -210,89 +16,110 @@ function complexNewtonStep(polynomial, guess) {
   return guess.add(px.divide(pprimex).multiply(-1));
 }
 
-function complexFindZero(polynomial, guess, tolerance) {
+function complexFindZero(polynomial, guess, max_steps, tolerance) {
   let value = polynomial.valueAt(guess);
   let num_steps = 0;
   while (value.lengthSq() > tolerance) {
     const new_guess = complexNewtonStep(polynomial, guess);
     guess = new_guess;
-    num_steps += 1;
-    if (num_steps > 100)
-      break;
-      // throw new Error("Too many steps");
     value = polynomial.valueAt(guess);
+    num_steps += 1;
+    if (num_steps === max_steps)
+      break;
   }
 
-  return [guess, num_steps];
+  return guess;
 }
 
-const ROOTS = [
-  new ComplexNumber(0, 0),
-  new ComplexNumber(10, 0),
-  new ComplexNumber(5, 7),
-];
-const func = new ComplexPolynomial(ROOTS);
-func.expand();
-// func.derivativeAt(new ComplexNumber(-1, 0));
-const zero = complexFindZero(func, new ComplexNumber(5, 7), 0.1);
-// console.log(zero[0].real.toFixed(0), zero[0].imaginary.toFixed(0), zero[1]);
-
-const POINT_SIZE = 5;
-const PIXEL_SIZE = 10;
-const S = 500;
-const canvas = document.createElement('canvas');
-canvas.width = canvas.height = S;
-document.body.appendChild(canvas);
-const ctx = canvas.getContext('2d');
-ctx.moveTo(0, S/2);
-ctx.lineTo(S, S/2);
-ctx.moveTo(S/2, 0);
-ctx.lineTo(S/2, S);
-ctx.stroke();
-
-ctx.beginPath();
-
-
-const COLORS = ["red", "blue", "green"];
-function findClosestZero(value) {
-  let minDist = 10000;
+function findClosestZero(value, roots) {
+  let minDist = 1e999;
   let minRoot = null;
-  for (i in ROOTS) {
-    const r = ROOTS[i];
+  for (i in roots) {
+    const r = roots[i];
     const dist = (r.real - value.real) ** 2 + (r.imaginary - value.imaginary) ** 2;
     if (dist < minDist) {
       minDist = dist;
       minRoot = i;
     }
   }
-  // console.log(minRoot);
   return minRoot;
 }
+const S = 500;
+const POINT_SIZE = 5;
+const PIXEL_SIZE = 10;
+const MAX_STEPS = 5;
+const COLORS = ["#e439a1", "#38b5ce", "#886ed6"];
+const COORDINATE_SIZE = 20;
+const ROOT_NUMBERS = [
+  [0, 0],
+  [-10, 5],
+  [10, -5],
+];
 
-ctx.translate(S/2, S/2);
-const dim = S/PIXEL_SIZE;
-// const zero1 = complexFindZero(func, new ComplexNumber(5, 0), .10)[0];
-// console.log(zero1.real, zero1.imaginary);
-for (var x = -dim/2; x < dim/2; x+=0.5) {
-  for (var y = -dim/2; y < dim/2; y+=0.5) {
-    const zero = complexFindZero(func, new ComplexNumber(x, y), .10)[0];
-    // console.log(x, y, zero.real, zero.imaginary);
-    const numRoot = findClosestZero(zero);
-    // console.log(numRoot);
+const rootRatio = S / COORDINATE_SIZE / 2;
+const ROOTS = [
+  new ComplexNumber(ROOT_NUMBERS[0][0] * rootRatio, ROOT_NUMBERS[0][1] * rootRatio),
+  new ComplexNumber(ROOT_NUMBERS[1][0] * rootRatio, ROOT_NUMBERS[1][1] * rootRatio),
+  new ComplexNumber(ROOT_NUMBERS[2][0] * rootRatio, ROOT_NUMBERS[2][1] * rootRatio),
+];
+
+
+const canvas = document.createElement('canvas');
+document.body.appendChild(canvas);
+const ctx = canvas.getContext('2d');
+canvas.width = canvas.height = S;
+
+function draw() {
+  const func = new ComplexPolynomial(ROOTS);
+  ctx.reset();
+  ctx.translate(S/2, S/2);
+  const dim = S;
+  for (var x = -dim/2; x < dim/2; x+=PIXEL_SIZE) {
+    for (var y = -dim/2; y < dim/2; y+=PIXEL_SIZE) {
+      const zero = complexFindZero(func, new ComplexNumber(x, y), MAX_STEPS, .10);
+      const numRoot = findClosestZero(zero, ROOTS);
+      ctx.beginPath();
+      ctx.fillStyle = COLORS[numRoot];
+      ctx.fillRect(x, y, PIXEL_SIZE * .9, PIXEL_SIZE * .9);
+      ctx.fill();
+    }
+  }
+
+  ctx.fillStyle = "black";
+  for (r of ROOTS) {
     ctx.beginPath();
-    ctx.fillStyle = COLORS[numRoot];
-    // console.log(COLORS[numRoot]);
-    ctx.arc(PIXEL_SIZE * x, PIXEL_SIZE * y, 3, 0, 2*Math.PI);
+    ctx.arc(r.real, r.imaginary, POINT_SIZE, 0, 2*Math.PI);
     ctx.fill();
   }
+
+  ctx.translate(-S/2, -S/2);
+  ctx.moveTo(0, S/2);
+  ctx.lineTo(S, S/2);
+  ctx.moveTo(S/2, 0);
+  ctx.lineTo(S/2, S);
+  ctx.stroke();
+}
+draw();
+
+var mouseDown = 0;
+document.body.onmousedown = function() {
+  ++mouseDown;
+}
+document.body.onmouseup = function() {
+  --mouseDown;
 }
 
-ctx.fillStyle = "black";
-for (r of ROOTS) {
-  ctx.beginPath();
-  ctx.arc(PIXEL_SIZE * r.real, PIXEL_SIZE * r.imaginary, POINT_SIZE, 0, 2*Math.PI);
-  ctx.fill();
-}
+canvas.addEventListener('mousemove', e => {
+  if (mouseDown) {
+    x = e.offsetX - 0.5 * S;
+    y = e.offsetY - 0.5 * S;
+    const pt = new ComplexNumber(x, y);
+    const num = findClosestZero(pt, ROOTS);
+    ROOTS[num] = pt;
+    draw();
+  }
+});
+
 
 </script>
 </html>
