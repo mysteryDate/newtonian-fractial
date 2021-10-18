@@ -29,7 +29,7 @@ class ComplexNumber {
       const c = A.real;
       const d = A.imaginary;
       result.real = (a*c + b*d) / (c**2 + d**2);
-      result.imaginary = (b*c + a*d) /(c**2 + d**2);
+      result.imaginary = (b*c - a*d) /(c**2 + d**2);
     } else {
       throw new Error("Must divide with either a number or a complex number");
     }
@@ -68,5 +68,27 @@ class ComplexNumber {
   }
 }
 
+(() => {
+  let a = new ComplexNumber(1, 2);
+  console.assert(a.real === 1);
+  console.assert(a.imaginary === 2);
 
-// console.assert(false, "HI");
+  a = new ComplexNumber(1, 2).multiply(new ComplexNumber(3, 4));
+  console.assert(a.real === -5);
+  console.assert(a.imaginary === 10);
+
+  a = new ComplexNumber(1, -2).multiply(new ComplexNumber(-3, 4));
+  console.assert(a.real === 5);
+  console.assert(a.imaginary === 10);
+
+  a = new ComplexNumber(1, 2.1).add(new ComplexNumber(-3, 4.33));
+  console.assert(a.real === -2);
+  console.assert(a.imaginary === 6.43);
+
+  a = new ComplexNumber(3, 4);
+  console.assert(a.lengthSq() === 25);
+
+  a = new ComplexNumber(1, 2).divide(new ComplexNumber(-3, 4));
+  console.assert(a.real === 0.2);
+  console.assert(a.imaginary === -0.4);
+})();

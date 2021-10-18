@@ -10,26 +10,7 @@
 <body></body>
 <script type='text/javascript'>
 
-function complexNewtonStep(polynomial, guess) {
-  const px = polynomial.valueAt(guess);
-  const pprimex = polynomial.derivativeAt(guess);
-  return guess.add(px.divide(pprimex).multiply(-1));
-}
 
-function complexFindZero(polynomial, guess, max_steps, tolerance) {
-  let value = polynomial.valueAt(guess);
-  let num_steps = 0;
-  while (value.lengthSq() > tolerance) {
-    const new_guess = complexNewtonStep(polynomial, guess);
-    guess = new_guess;
-    value = polynomial.valueAt(guess);
-    num_steps += 1;
-    if (num_steps === max_steps)
-      break;
-  }
-
-  return guess;
-}
 
 function findClosestZero(value, roots) {
   let minDist = 1e999;
@@ -47,13 +28,13 @@ function findClosestZero(value, roots) {
 const S = 500;
 const POINT_SIZE = 5;
 const PIXEL_SIZE = 10;
-const MAX_STEPS = 5;
+const MAX_STEPS = 10;
 const COLORS = ["#e439a1", "#38b5ce", "#886ed6"];
 const COORDINATE_SIZE = 20;
 const ROOT_NUMBERS = [
   [0, 0],
-  [-10, 5],
-  [10, -5],
+  [1, 5],
+  [5, -10],
 ];
 
 const rootRatio = S / COORDINATE_SIZE / 2;
