@@ -44,12 +44,36 @@ class ComplexPolynomial {
     }
   }
 
-  // Just go with order of 3 for now
+  // Just go with order of 4 for now
   expand() {
-    if (this.roots.length > 3)
+    if (this.roots.length > 4)
       throw new Error("Can only expand polynomials of degree 3 or less")
 
     this.coefficients = [];
+
+    if (this.roots.length === 4) {
+      // for shorthand
+      const a = this.roots[0];
+      const b = this.roots[1];
+      const c = this.roots[2];
+      const d = this.roots[3];
+
+      this.coefficients[0] = a.multiply(b).multiply(c).multiply(d);
+      this.coefficients[1] =
+        a.multiply(b).multiply(c).inv().add(
+        a.multiply(b).multiply(d).inv().add(
+        a.multiply(c).multiply(d).inv().add(
+        b.multiply(c).multiply(d).inv())));
+      this.coefficients[2] =
+        a.multiply(b).add(
+        a.multiply(c).add(
+        a.multiply(d).add(
+        b.multiply(c).add(
+        b.multiply(d).add(
+        c.multiply(d))))));
+      this.coefficients[3] = a.inv().add(b.inv().add(c.inv().add(d.inv())));
+      this.coefficients[4] = new ComplexNumber(1, 0);
+    }
 
     if (this.roots.length === 3) {
       // for shorthand
@@ -57,9 +81,9 @@ class ComplexPolynomial {
       const b = this.roots[1];
       const c = this.roots[2];
 
-      this.coefficients[0] = a.multiply(b).multiply(c).multiply(-1);
+      this.coefficients[0] = a.multiply(b).multiply(c).inv();
       this.coefficients[1] = a.multiply(b).add(a.multiply(c)).add(b.multiply(c));
-      this.coefficients[2] = a.add(b).add(c).multiply(-1);
+      this.coefficients[2] = a.add(b).add(c).inv();
       this.coefficients[3] = new ComplexNumber(1, 0);
     }
 
@@ -68,7 +92,7 @@ class ComplexPolynomial {
       const b = this.roots[1];
 
       this.coefficients[0] = a.multiply(b);
-      this.coefficients[1] = a.add(b).multiply(-1);
+      this.coefficients[1] = a.add(b).inv();
       this.coefficients[2] = new ComplexNumber(1, 0);
     }
   }
@@ -77,19 +101,15 @@ class ComplexPolynomial {
 function complexNewtonStep(polynomial, guess) {
   const px = polynomial.valueAt(guess);
   const pprimex = polynomial.derivativeAt(guess);
-  return guess.add(px.divide(pprimex).multiply(-1));
+  return guess.add(px.divide(pprimex).inv());
 }
 
-function complexFindZero(polynomial, guess, max_steps, tolerance) {
+function complexFindZero(polynomial, guess, max_steps) {
   let value = polynomial.valueAt(guess);
-  let num_steps = 0;
-  while (value.lengthSq() > tolerance) {
+  for (var i = 0; i < max_steps; i++) {
     const new_guess = complexNewtonStep(polynomial, guess);
     guess = new_guess;
     value = polynomial.valueAt(guess);
-    num_steps += 1;
-    if (num_steps === max_steps)
-      break;
   }
 
   return guess;

@@ -2,6 +2,7 @@ class ComplexNumber {
   constructor(real, imaginary) {
     this.real = real;
     this.imaginary = imaginary;
+    this.length2 = null;
   }
 
   multiply(A) {
@@ -16,6 +17,10 @@ class ComplexNumber {
       throw new Error("Must multiply with either a number or a complex number");
     }
     return result;
+  }
+
+  inv() {
+    return this.multiply(-1);
   }
 
   divide(A) {
@@ -60,7 +65,9 @@ class ComplexNumber {
   }
 
   lengthSq() {
-    return this.real ** 2 + this.imaginary ** 2;
+    if (!this.length2)
+      this.length2 = this.real ** 2 + this.imaginary ** 2;
+    return this.length2;
   }
 
   copy() {
