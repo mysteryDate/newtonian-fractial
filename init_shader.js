@@ -44,13 +44,23 @@ function init(shadercode) {
 }
 
 function update() {
-  gl.uniform1f(gl.getUniformLocation(glProgram, "u_time"),
-    performance.now() / 1000);
+  // gl.uniform1f(gl.getUniformLocation(glProgram, "u_time"),
+  //   performance.now() / 1000);
   gl.drawArrays(6, 0, 3);
-  requestAnimationFrame(update);
+  // console.log("hi");
+  // requestAnimationFrame(update);
 }
 
-function createShaderCanvas(canvas, path) {
+function updateShader(roots, coefficients, derivativeCoefficients) {
+  // gl.uniform2fv(gl.getUniformLocation(glProgram, "u_coefficients"), coefficients);
+  gl.uniform2fv(gl.getUniformLocation(glProgram, "u_coefficients"), coefficients);
+  gl.uniform2fv(gl.getUniformLocation(glProgram, "u_derivative"), derivativeCoefficients);
+  gl.uniform2fv(gl.getUniformLocation(glProgram, "u_roots"), roots);
+  gl.drawArrays(6, 0, 3);
+  // update();
+}
+
+function createShaderCanvas(canvas, path, roots, coefficients, derivativeCoefficients) {
   gl = canvas.getContext("webgl");
   glProgram = gl.createProgram();
 
@@ -63,6 +73,9 @@ function createShaderCanvas(canvas, path) {
   fetch(path).then(response => response.text())
     .then((data) => {
       init(data);
+      gl.uniform2fv(gl.getUniformLocation(glProgram, "u_coefficients"), coefficients);
+      gl.uniform2fv(gl.getUniformLocation(glProgram, "u_derivative"), derivativeCoefficients);
+      gl.uniform2fv(gl.getUniformLocation(glProgram, "u_roots"), roots);
       update();
     });
 };

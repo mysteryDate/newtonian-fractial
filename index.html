@@ -3,6 +3,16 @@
 <script type="text/javascript" src="ComplexNumber.js"></script>
 <script type="text/javascript" src="ComplexPolynomial.js"></script>
 <script type="text/javascript" src="init_shader.js"></script>
+<style type="text/css">
+  canvas#overlay {
+    border: 1px solid magenta;
+    position: absolute;
+    left: 0px;
+  }
+  * {
+    margin: 0px;
+  }
+</style>
 <body></body>
 <script type='text/javascript'>
 
@@ -22,20 +32,25 @@ function findClosestZero(value, roots) {
 }
 const S = 500;
 const POINT_SIZE = 5;
-const PIXEL_SIZE = 1;
+const PIXEL_SIZE = 5;
 const MAX_STEPS = 3;
+const COORDINATE_SIZE = 1;
 const COLORS = ["#1e5673", "#759fbc", "#91c2c8", "#b9b8d3"];
 const ROOT_NUMBERS = [
-  [-1, -1],
-  [1, -1],
-  [-1, 1],
-  [1, 1],
+  [-COORDINATE_SIZE/2, -COORDINATE_SIZE/2],
+  [COORDINATE_SIZE/2, -COORDINATE_SIZE/2],
+  [-COORDINATE_SIZE/2, COORDINATE_SIZE/2],
+  [COORDINATE_SIZE/2, COORDINATE_SIZE/2],
 ];
 
-const rootRatio = S / 2;
-const ROOTS = []
-for (r in ROOT_NUMBERS)
+const rootRatio = S / COORDINATE_SIZE / 2;
+const ROOTS = [];
+const bigRoots = [];
+for (r in ROOT_NUMBERS) {
   ROOTS.push(new ComplexNumber(ROOT_NUMBERS[r][0], ROOT_NUMBERS[r][1]));
+}
+
+
 
 
 const canvas = document.createElement('canvas');
@@ -51,20 +66,20 @@ function draw() {
   let num_iterations = 0;
   for (var x = -1; x < 1; x+=PIXEL_SIZE/S * 2) {
     for (var y = -1; y < 1; y+=PIXEL_SIZE/S * 2) {
-      num_iterations++;
-      const zero = complexFindZero(func, new ComplexNumber(x, y), MAX_STEPS);
-      const numRoot = findClosestZero(zero, ROOTS);
-      ctx.fillStyle = COLORS[numRoot];
-      ctx.fillRect(x * rootRatio, y * rootRatio, PIXEL_SIZE, PIXEL_SIZE);
+      // const zero = complexFindZero(func, new ComplexNumber(x * COORDINATE_SIZE, y * COORDINATE_SIZE), MAX_STEPS);
+      // const numRoot = findClosestZero(zero, ROOTS);
+      // ctx.fillStyle = COLORS[numRoot];
+      // ctx.fillRect(x * S/2, y * S/2, PIXEL_SIZE, PIXEL_SIZE);
     }
   }
+  console.log(num_iterations);
 
-  console.log(func);
+  // console.log(func);
 
   ctx.fillStyle = "black";
   for (r of ROOTS) {
     ctx.beginPath();
-    ctx.arc(r.real * rootRatio, r.imaginary * rootRatio, POINT_SIZE, 0, 2*Math.PI);
+    ctx.arc(r.real * S / COORDINATE_SIZE / 2, r.imaginary * S / COORDINATE_SIZE / 2, POINT_SIZE, 0, 2*Math.PI);
     ctx.fill();
   }
 
@@ -85,21 +100,62 @@ document.body.onmouseup = function() {
   --mouseDown;
 }
 
-canvas.addEventListener('mousemove', e => {
-  if (mouseDown) {
-    x = (e.offsetX / S) * 2 - 1;
-    y = (e.offsetY / S) * 2 - 1;
-    const pt = new ComplexNumber(x, y);
-    const num = findClosestZero(pt, ROOTS);
-    ROOTS[num] = pt;
-    draw();
-  }
-});
 
 var glCanvas = document.createElement("canvas");
 glCanvas.width = glCanvas.height = S;
 document.body.appendChild(glCanvas);
-createShaderCanvas(glCanvas, "frag.glsl");
 
+function compArrayToTupleArray(compArray) {
+  let result = [];
+  for (var i = 0; i < compArray.length; i++) {
+    result.push(compArray[i].real, compArray[i].imaginary)
+  }
+  return result;
+}
+
+const func = new ComplexPolynomial(ROOTS);
+const shaderRoots = compArrayToTupleArray(func.roots);
+const shaderDerivative = compArrayToTupleArray(func.getDerivative());
+const shaderCoefficients = compArrayToTupleArray(func.coefficients);
+
+// updateShader(shaderRoots, shaderCoefficients, shaderDerivative);
+createShaderCanvas(glCanvas, "frag.glsl", shaderRoots, shaderCoefficients, shaderDerivative);
+
+const overlayCanvas = document.createElement("canvas");
+overlayCanvas.id = "overlay";
+overlayCanvas.width = overlayCanvas.height = S;
+document.body.appendChild(overlayCanvas);
+const overlayCtx = overlayCanvas.getContext("2d");
+
+function drawOverlayRoots() {
+  overlayCtx.reset();
+  overlayCtx.translate(S/2, S/2);
+  for (r of ROOTS) {
+    overlayCtx.beginPath();
+    overlayCtx.arc(r.real * rootRatio, r.imaginary * rootRatio, POINT_SIZE, 0, 2*Math.PI);
+    overlayCtx.fill();
+  }
+}
+drawOverlayRoots()
+
+canvas.addEventListener('mousemove', e => {
+  if (mouseDown) {
+    x = ((e.offsetX / S) * 2 - 1) * COORDINATE_SIZE;
+    y = ((e.offsetY / S) * 2 - 1) * COORDINATE_SIZE;
+    const pt = new ComplexNumber(x, y);
+    const num = findClosestZero(pt, ROOTS);
+    ROOTS[num] = pt;
+    ROOTS[num] = new ComplexNumber(x, y);
+    draw();
+    drawOverlayRoots();
+
+    const func = new ComplexPolynomial(ROOTS);
+    const shaderRoots = compArrayToTupleArray(func.roots);
+    const shaderDerivative = compArrayToTupleArray(func.getDerivative());
+    const shaderCoefficients = compArrayToTupleArray(func.coefficients);
+
+    updateShader(shaderRoots, shaderCoefficients, shaderDerivative);
+  }
+});
 </script>
 </html>

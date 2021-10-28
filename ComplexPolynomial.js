@@ -42,6 +42,8 @@ class ComplexPolynomial {
     for (var i = 0; i < this.coefficients.length - 1; i++) {
       this.derivative[i] = this.coefficients[i + 1].multiply(i + 1)
     }
+
+    return this.derivative;
   }
 
   // Just go with order of 4 for now
