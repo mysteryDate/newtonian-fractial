@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Javascript solution</title>
+  <script type="text/javascript" src="ComplexNumber.js"></script>
+  <script type="text/javascript" src="ComplexPolynomial.js"></script>
+<body></body>
+<script type="text/javascript">
+const CANVAS_SIZE = 500;
+const PIXEL_SIZE = 5;
+const MAX_STEPS = 1;
+const COLORS = ["#1e5673", "#759fbc", "#91c2c8", "#b9b8d3"];
+
+const canvas = document.createElement('canvas');
+document.body.appendChild(canvas);
+const ctx = canvas.getContext('2d');
+canvas.width = canvas.height = CANVAS_SIZE;
+
+function findClosestZero(value, roots) {
+  let minDist = 1e999;
+  let minRoot = null;
+  for (i in roots) {
+    const r = roots[i];
+    const dist = (r.real - value.real) ** 2 + (r.imaginary - value.imaginary) ** 2;
+    if (dist < minDist) {
+      minDist = dist;
+      minRoot = i;
+    }
+  }
+  return minRoot;
+}
+
+const ROOTS = [
+  new ComplexNumber(-1/2, -1/2),
+  new ComplexNumber(1/2, -1/2),
+  new ComplexNumber(-1/2, 1/2),
+  new ComplexNumber(1/2, 1/2),
+];
+
+function draw() {
+  const func = new ComplexPolynomial(ROOTS);
+  ctx.reset();
+  ctx.translate(CANVAS_SIZE/2, CANVAS_SIZE/2);
+  for (var x = -1; x < 1; x+=PIXEL_SIZE/CANVAS_SIZE * 2) {
+    for (var y = -1; y < 1; y+=PIXEL_SIZE/CANVAS_SIZE * 2) {
+      const zero = complexFindZero(func, new ComplexNumber(x, y), MAX_STEPS);
+      const numRoot = findClosestZero(zero, ROOTS);
+      ctx.fillStyle = COLORS[numRoot];
+      ctx.fillRect(x * CANVAS_SIZE/2, y * CANVAS_SIZE/2, PIXEL_SIZE, PIXEL_SIZE);
+    }
+  }
+
+  ctx.fillStyle = "black";
+  for (r of ROOTS) {
+    ctx.beginPath();
+    ctx.arc(r.real * CANVAS_SIZE / 2, r.imaginary * CANVAS_SIZE / 2, 5, 0, 2*Math.PI);
+    ctx.fill();
+  }
+}
+draw();
+
+let mouseDown = false;
+document.body.onmousedown = () => { mouseDown = true; }
+document.body.onmouseup = () => { mouseDown = false; }
+canvas.addEventListener('mousemove', (e) => {
+  if (!mouseDown) return;
+  x = ((e.offsetX / CANVAS_SIZE) * 2 - 1);
+  y = ((e.offsetY / CANVAS_SIZE) * 2 - 1);
+  const pt = new ComplexNumber(x, y);
+  const num = findClosestZero(pt, ROOTS);
+  ROOTS[num] = pt;
+  draw();
+});
+</script>
+</html>

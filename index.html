@@ -66,10 +66,10 @@ function draw() {
   let num_iterations = 0;
   for (var x = -1; x < 1; x+=PIXEL_SIZE/S * 2) {
     for (var y = -1; y < 1; y+=PIXEL_SIZE/S * 2) {
-      // const zero = complexFindZero(func, new ComplexNumber(x * COORDINATE_SIZE, y * COORDINATE_SIZE), MAX_STEPS);
-      // const numRoot = findClosestZero(zero, ROOTS);
-      // ctx.fillStyle = COLORS[numRoot];
-      // ctx.fillRect(x * S/2, y * S/2, PIXEL_SIZE, PIXEL_SIZE);
+      const zero = complexFindZero(func, new ComplexNumber(x * COORDINATE_SIZE, y * COORDINATE_SIZE), MAX_STEPS);
+      const numRoot = findClosestZero(zero, ROOTS);
+      ctx.fillStyle = COLORS[numRoot];
+      ctx.fillRect(x * S/2, y * S/2, PIXEL_SIZE, PIXEL_SIZE);
     }
   }
   console.log(num_iterations);

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Shader solution</title>
+  <script type="text/javascript" src="ComplexNumber.js"></script>
+  <script type="text/javascript" src="ComplexPolynomial.js"></script>
+  <script type="text/javascript" src="init_shader.js"></script>
+  <style type="text/css">
+    #overlay {
+      position:  absolute;
+      left: 8px;
+      top: 8px;
+    }
+  </style>
+</head>
+<body></body>
+<script type="text/javascript">
+const S = 1000;
+const ROOTS = [
+  new ComplexNumber(0.1375, 0.6375),
+  new ComplexNumber(0.7375, -0.325),
+  new ComplexNumber(-0.8125, 0.1625),
+  new ComplexNumber(-0.1375, -0.725),
+];
+const COLORS = [
+  0.118, 0.337, 0.451,
+  0.459, 0.624, 0.737,
+  0.725, 0.722, 0.827,
+  0.569, 0.761, 0.784];
+
+var glCanvas = document.createElement("canvas");
+glCanvas.width = glCanvas.height = S;
+document.body.appendChild(glCanvas);
+
+function findClosestZero(value, roots) {
+  let minDist = 1e999;
+  let minRoot = null;
+  for (i in roots) {
+    const r = roots[i];
+    const dist = (r.real - value.real) ** 2 + (r.imaginary - value.imaginary) ** 2;
+    if (dist < minDist) {
+      minDist = dist;
+      minRoot = i;
+    }
+  }
+  return minRoot;
+}
+
+function compArrayToArray(compArray) {
+  let result = [];
+  for (var i = 0; i < compArray.length; i++) {
+    result.push(compArray[i].real, compArray[i].imaginary)
+  }
+  return result;
+}
+
+const overlayCanvas = document.createElement("canvas");
+overlayCanvas.id = "overlay";
+overlayCanvas.width = overlayCanvas.height = S;
+document.body.appendChild(overlayCanvas);
+const overlayCtx = overlayCanvas.getContext("2d");
+function drawOverlayRoots() {
+  overlayCtx.reset();
+  overlayCtx.translate(S/2, S/2);
+  for (r of ROOTS) {
+    overlayCtx.beginPath();
+    overlayCtx.arc(r.real * S / 2, r.imaginary * S / 2, 5, 0, 2*Math.PI);
+    overlayCtx.fill();
+  }
+}
+
+let created = false;
+function update() {
+  const func = new ComplexPolynomial(ROOTS);
+  const shaderRoots = compArrayToArray(func.roots);
+  const shaderDerivative = compArrayToArray(func.getDerivative());
+  const shaderCoefficients = compArrayToArray(func.coefficients);
+  if (!created) {
+    createShaderCanvas(glCanvas, "frag.glsl", shaderRoots, shaderCoefficients, shaderDerivative, COLORS);
+    created = true;
+  } else {
+    updateShader(shaderRoots, shaderCoefficients, shaderDerivative, COLORS);
+  }
+  drawOverlayRoots()
+}
+update();
+
+let mouseDown = false;
+document.body.onmousedown = () => { mouseDown = true; }
+document.body.onmouseup = () => { mouseDown = false; }
+overlayCanvas.addEventListener('mousemove', e => {
+  if (mouseDown) {
+    x = ((e.offsetX / S) * 2 - 1);
+    y = ((e.offsetY / S) * 2 - 1);
+    const pt = new ComplexNumber(x, y);
+    const num = findClosestZero(pt, ROOTS);
+    ROOTS[num] = pt;
+    drawOverlayRoots();
+    update();
+  }
+});
+</script>
+</html>

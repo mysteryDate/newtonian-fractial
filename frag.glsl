@@ -1,5 +1,6 @@
 precision mediump float;
-// Monolithic shader attempt
+const int MAX_STEPS = 5;
+
 vec2 compMul(vec2 a, vec2 b) {
   return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
 }
@@ -56,7 +57,6 @@ vec2 newtonStep(vec2 coefficients[5], vec2 derivativeCoefficients[4], vec2 guess
   return compAdd(guess, compInv(compDivide(px, pprimex)));
 }
 
-const int MAX_STEPS = 10;
 vec2 findZero(vec2 coefficients[5], vec2 derivativeCoefficients[4], vec2 start) {
   vec2 value = compValueAt(coefficients, start);
   vec2 guess = start;
@@ -88,22 +88,19 @@ uniform vec2 u_coefficients[5];
 uniform vec2 u_derivative[4];
 uniform vec2 u_roots[4];
 uniform vec3 u_colors[4];
+uniform vec3 u_color;
 
 void main() {
   vec2 st = (gl_FragCoord.xy/u_resolution.xy - vec2(0.5)) * 2.0;
-  st.y *= -1.0;
+  st.y *= -1.0; // So that it matches the overlay canvas
 
   vec2 zero = findZero(u_coefficients, u_derivative, st);
   int numRoot = findClosestZero(zero, u_roots);
   vec3 col = vec3(0.0);
-  // if (numRoot == 0) col = u_colors[0];
-  // if (numRoot == 1) col = u_colors[1];
-  // if (numRoot == 2) col = u_colors[2];
-  // if (numRoot == 3) col = u_colors[3];
-  if (numRoot == 0) col = vec3(1.,0.,1.);
-  if (numRoot == 1) col = vec3(0.,1.,1.);
-  if (numRoot == 2) col = vec3(1.);
-  if (numRoot == 3) col = vec3(1.,1.,0);
+  if (numRoot == 0) col = u_colors[0];
+  if (numRoot == 1) col = u_colors[1];
+  if (numRoot == 2) col = u_colors[2];
+  if (numRoot == 3) col = u_colors[3].xyz;
 
   gl_FragColor = vec4(col, 1.0);
 }

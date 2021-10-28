@@ -35,32 +35,20 @@ function init(shadercode) {
   gl.enableVertexAttribArray(0);
   gl.vertexAttribPointer(0, 2, gl.BYTE, 0, 0, 0);
 
-  gl.uniform2f(gl.getUniformLocation(glProgram, "u_resolution"), canvas.width,
-    canvas.height);
-  gl.uniform2f(gl.getUniformLocation(glProgram, "u_mouse"), 0, 0);
-  // const texture = loadTexture(gl, 'textures/cait.jpg');
-  // console.log(gl.getUniformLocation(glProgram, "u_resolution"));
+  gl.uniform2f(gl.getUniformLocation(glProgram, "u_resolution"), gl.canvas.width,
+    gl.canvas.height);
   gl.drawArrays(6, 0, 3);
 }
 
-function update() {
-  // gl.uniform1f(gl.getUniformLocation(glProgram, "u_time"),
-  //   performance.now() / 1000);
-  gl.drawArrays(6, 0, 3);
-  // console.log("hi");
-  // requestAnimationFrame(update);
-}
-
-function updateShader(roots, coefficients, derivativeCoefficients) {
-  // gl.uniform2fv(gl.getUniformLocation(glProgram, "u_coefficients"), coefficients);
+function updateShader(roots, coefficients, derivativeCoefficients, colors) {
   gl.uniform2fv(gl.getUniformLocation(glProgram, "u_coefficients"), coefficients);
   gl.uniform2fv(gl.getUniformLocation(glProgram, "u_derivative"), derivativeCoefficients);
   gl.uniform2fv(gl.getUniformLocation(glProgram, "u_roots"), roots);
+  gl.uniform3fv(gl.getUniformLocation(glProgram, "u_colors"), colors);
   gl.drawArrays(6, 0, 3);
-  // update();
 }
 
-function createShaderCanvas(canvas, path, roots, coefficients, derivativeCoefficients) {
+function createShaderCanvas(canvas, path, roots, coefficients, derivativeCoefficients, colors) {
   gl = canvas.getContext("webgl");
   glProgram = gl.createProgram();
 
@@ -76,60 +64,8 @@ function createShaderCanvas(canvas, path, roots, coefficients, derivativeCoeffic
       gl.uniform2fv(gl.getUniformLocation(glProgram, "u_coefficients"), coefficients);
       gl.uniform2fv(gl.getUniformLocation(glProgram, "u_derivative"), derivativeCoefficients);
       gl.uniform2fv(gl.getUniformLocation(glProgram, "u_roots"), roots);
-      update();
+      gl.uniform3fv(gl.getUniformLocation(glProgram, "u_colors"), colors);
+      gl.drawArrays(6, 0, 3);
     });
 };
 
-//
-// Initialize a texture and load an image.
-// When the image finished loading copy it into the texture.
-//
-function loadTexture(gl, url) {
-  const texture = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, texture);
-
-  // Because images have to be download over the internet
-  // they might take a moment until they are ready.
-  // Until then put a single pixel in the texture so we can
-  // use it immediately. When the image has finished downloading
-  // we'll update the texture with the contents of the image.
-  const level = 0;
-  const internalFormat = gl.RGBA;
-  const width = 1;
-  const height = 1;
-  const border = 0;
-  const srcFormat = gl.RGBA;
-  const srcType = gl.UNSIGNED_BYTE;
-  const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
-  gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-                width, height, border, srcFormat, srcType,
-                pixel);
-
-  const image = new Image();
-  image.onload = function() {
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-                  srcFormat, srcType, image);
-
-    // WebGL1 has different requirements for power of 2 images
-    // vs non power of 2 images so check if the image is a
-    // power of 2 in both dimensions.
-    if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
-       // Yes, it's a power of 2. Generate mips.
-       gl.generateMipmap(gl.TEXTURE_2D);
-    } else {
-       // No, it's not a power of 2. Turn off mips and set
-       // wrapping to clamp to edge
-       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    }
-  };
-  image.src = url;
-
-  return texture;
-}
-
-function isPowerOf2(value) {
-  return (value & (value - 1)) == 0;
-}
