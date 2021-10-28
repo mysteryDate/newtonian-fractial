@@ -21,3 +21,11 @@ vec2 divide(a, b) {
   result.y = (a.y * b.x - a.x * b.y) / (a.x * a.x + b.x * b.x);
   return result;
 }
+
+vec2 inv(a) {
+  return mul(a, vec2(-1, 0));
+}
+
+float lengthSq(a) {
+  return a.x * a.x + a.y * a.y;
+}
