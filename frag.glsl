@@ -1,3 +1,4 @@
+precision mediump float;
 // Monolithic shader attempt
 vec2 compMul(vec2 a, vec2 b) {
   return vec2(a.x * b.x - a.y + b.y, a.x * b.y + a.y * b.x);
@@ -11,7 +12,7 @@ vec2 compPower(vec2 a, int n) {
   vec2 result = vec2(1, 1);
   for (int i = 0; i < 10; i++) {
     if (i > n) break;
-    result = mul(result, a);
+    result = compMul(result, a);
   }
   return result;
 }
@@ -24,7 +25,7 @@ vec2 compDivide(vec2 a, vec2 b) {
 }
 
 vec2 compInv(vec2 a) {
-  return mul(a, vec2(-1, 0));
+  return compMul(a, vec2(-1, 0));
 }
 
 float compLengthSq(vec2 a) {

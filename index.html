@@ -22,21 +22,20 @@ function findClosestZero(value, roots) {
 }
 const S = 500;
 const POINT_SIZE = 5;
-const PIXEL_SIZE = 3;
+const PIXEL_SIZE = 1;
 const MAX_STEPS = 3;
 const COLORS = ["#1e5673", "#759fbc", "#91c2c8", "#b9b8d3"];
-const COORDINATE_SIZE = 40;
 const ROOT_NUMBERS = [
-  [5.5, 25.5],
-  [29.5, -13],
-  [-32.5, 6.5],
-  [-5.5, -29],
+  [-1, -1],
+  [1, -1],
+  [-1, 1],
+  [1, 1],
 ];
 
-const rootRatio = S / COORDINATE_SIZE / 2;
+const rootRatio = S / 2;
 const ROOTS = []
 for (r in ROOT_NUMBERS)
-  ROOTS.push(new ComplexNumber(ROOT_NUMBERS[r][0] * rootRatio, ROOT_NUMBERS[r][1] * rootRatio));
+  ROOTS.push(new ComplexNumber(ROOT_NUMBERS[r][0], ROOT_NUMBERS[r][1]));
 
 
 const canvas = document.createElement('canvas');
@@ -49,19 +48,23 @@ function draw() {
   ctx.reset();
   ctx.translate(S/2, S/2);
   const dim = S;
-  for (var x = -dim/2; x < dim/2; x+=PIXEL_SIZE) {
-    for (var y = -dim/2; y < dim/2; y+=PIXEL_SIZE) {
+  let num_iterations = 0;
+  for (var x = -1; x < 1; x+=PIXEL_SIZE/S * 2) {
+    for (var y = -1; y < 1; y+=PIXEL_SIZE/S * 2) {
+      num_iterations++;
       const zero = complexFindZero(func, new ComplexNumber(x, y), MAX_STEPS);
       const numRoot = findClosestZero(zero, ROOTS);
       ctx.fillStyle = COLORS[numRoot];
-      ctx.fillRect(x, y, PIXEL_SIZE, PIXEL_SIZE);
+      ctx.fillRect(x * rootRatio, y * rootRatio, PIXEL_SIZE, PIXEL_SIZE);
     }
   }
+
+  console.log(func);
 
   ctx.fillStyle = "black";
   for (r of ROOTS) {
     ctx.beginPath();
-    ctx.arc(r.real, r.imaginary, POINT_SIZE, 0, 2*Math.PI);
+    ctx.arc(r.real * rootRatio, r.imaginary * rootRatio, POINT_SIZE, 0, 2*Math.PI);
     ctx.fill();
   }
 
@@ -84,8 +87,8 @@ document.body.onmouseup = function() {
 
 canvas.addEventListener('mousemove', e => {
   if (mouseDown) {
-    x = e.offsetX - 0.5 * S;
-    y = e.offsetY - 0.5 * S;
+    x = (e.offsetX / S) * 2 - 1;
+    y = (e.offsetY / S) * 2 - 1;
     const pt = new ComplexNumber(x, y);
     const num = findClosestZero(pt, ROOTS);
     ROOTS[num] = pt;
@@ -93,10 +96,10 @@ canvas.addEventListener('mousemove', e => {
   }
 });
 
-// var glCanvas = document.createElement("canvas");
-// glCanvas.width = glCanvas.height = S;
-// document.body.appendChild(glCanvas);
-// createShaderCanvas(glCanvas, "loading.glsl");
+var glCanvas = document.createElement("canvas");
+glCanvas.width = glCanvas.height = S;
+document.body.appendChild(glCanvas);
+createShaderCanvas(glCanvas, "frag.glsl");
 
 </script>
 </html>
